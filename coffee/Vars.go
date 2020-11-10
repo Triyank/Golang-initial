@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+
 	"github.com/gorilla/mux"
 )
 
@@ -28,7 +29,6 @@ type Menu struct {
 func getList(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(res).Encode(coffeeShops)
-
 }
 
 func addShop(res http.ResponseWriter, req *http.Request) {
