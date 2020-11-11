@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
@@ -13,14 +14,13 @@ import (
 )
 
 var (
-	laptop  []Laptop
-	laptopx []Laptop
-	db      *gorm.DB
-	err     error
+	laptop []Laptop
+	db     *gorm.DB
+	err    error
 )
 
 type Laptop struct {
-	ID      string `gorm: "unique" json: "id"`
+	ID      int    `json: "id"; gorm:"primary_key; AUTO_INCREMENT"`
 	Brand   string `json: "brand"`
 	Windows string `json: "windows"`
 }
@@ -35,6 +35,7 @@ func main() {
 		fmt.Println("Connection Established")
 	}
 	fmt.Println("SQL tutorial")
+
 	db.AutoMigrate(&Laptop{})
 	handleRequests()
 
@@ -44,11 +45,11 @@ func handleRequests() {
 	router := mux.NewRouter().StrictSlash(true)
 
 	router.HandleFunc("/", homePage).Methods("GET")
-	router.HandleFunc("/laptops", getLaptops).Methods("GET")
-	router.HandleFunc("/laptops/{id}", getLaptop).Methods("GET")
-	router.HandleFunc("/laptops", addLaptop).Methods("POST")
-	router.HandleFunc("/laptops/{id}", deleteLaptop).Methods("DELETE")
-	router.HandleFunc("/laptops/{id}", updateLaptop).Methods("PUT")
+	router.HandleFunc("/l", getLaptops).Methods("GET")
+	router.HandleFunc("/l/{id}", getLaptop).Methods("GET")
+	router.HandleFunc("/l", addLaptop).Methods("POST")
+	router.HandleFunc("/l/{id}", deleteLaptop).Methods("DELETE")
+	router.HandleFunc("/l/{id}", updateLaptop).Methods("PUT")
 
 	log.Fatal(http.ListenAndServe(":1500", router))
 }
@@ -61,11 +62,7 @@ func homePage(res http.ResponseWriter, req *http.Request) {
 
 func getLaptops(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
-
-	fmt.Println("last value :=  ", db.Last(&laptopx))
-
-	fmt.Println("\nnew val ", db.Find(&laptop))
-
+	db.Find(&laptop)
 	json.NewEncoder(res).Encode(laptop)
 }
 
@@ -73,9 +70,9 @@ func getLaptop(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
 	count := 0
 	params := mux.Vars(req)
-
+	s, _ := strconv.Atoi(params["id"])
 	for _, v := range laptop {
-		if v.ID == params["id"] {
+		if v.ID == s {
 			json.NewEncoder(res).Encode(v)
 			count = count + 1
 			return
@@ -94,6 +91,7 @@ func addLaptop(res http.ResponseWriter, req *http.Request) {
 	json.Unmarshal(reqBody, &lappy)
 
 	db.Create(&lappy)
+
 	json.NewEncoder(res).Encode(lappy)
 }
 
@@ -101,9 +99,9 @@ func deleteLaptop(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(req)
 	count := 0
-
+	s, _ := strconv.Atoi(params["id"])
 	for i, v := range laptop {
-		if v.ID == params["id"] {
+		if v.ID == s {
 			laptop = append(laptop[:i], laptop[i+1:]...)
 			count = count + 1
 			json.NewEncoder(res).Encode(laptop)
@@ -120,9 +118,9 @@ func updateLaptop(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(req)
 	count := 0
-
+	s, _ := strconv.Atoi(params["id"])
 	for i, v := range laptop {
-		if v.ID == params["id"] {
+		if v.ID == s {
 			var newLappy Laptop
 			json.NewDecoder(req.Body).Decode(&newLappy)
 			newLappy.ID = v.ID
@@ -136,5 +134,4 @@ func updateLaptop(res http.ResponseWriter, req *http.Request) {
 		fail := "Incorrect ID"
 		json.NewEncoder(res).Encode(fail)
 	}
-
 }
